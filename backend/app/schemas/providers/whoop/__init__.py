@@ -1,3 +1,4 @@
+from .cycle_metadata import WhoopCycleMetadata, WhoopCycleMetadataResponse
 from .webhook import (
     WhoopWebhookNotification,
     WhoopWebhookNotificationType,
@@ -8,6 +9,8 @@ from .workout_import import (
 )
 
 __all__ = [
+    "WhoopCycleMetadata",
+    "WhoopCycleMetadataResponse",
     # Workout import
     "WhoopWorkoutJSON",
     "WhoopWorkoutCollectionJSON",
