@@ -549,7 +549,9 @@ class TestCreateOrUpdateMeal:
             patch("app.services.event_record_service.svix_service.is_enabled", return_value=True),
             patch("app.services.event_record_service.on_meal_created") as mock_meal,
         ):
-            event_record_service.create_or_update_meal(db, record, detail, nutrients=nutrients)
+            saved, inserted = event_record_service.create_or_update_meal(db, record, detail)
+            assert inserted is True
+            event_record_service.schedule_meal_webhook(db, saved.id, record, detail, nutrients)
             mock_meal.assert_not_called()  # not yet committed
 
             db.commit()
