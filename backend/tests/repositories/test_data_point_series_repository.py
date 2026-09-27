@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 
 from app.models import DataPointSeries, DataSource
 from app.repositories.data_point_series_repository import DataPointSeriesRepository
-from app.schemas.enums import SeriesType, get_series_type_id
+from app.schemas.enums import SeriesType
 from app.schemas.model_crud.activities import TimeSeriesQueryParams, TimeSeriesSampleCreate
 from tests.factories import DataSourceFactory, EventRecordFactory, UserFactory
 
@@ -1010,10 +1010,10 @@ class TestDeleteStaleForEventRecord:
             db, _sample(now - timedelta(hours=1), SeriesType.heart_rate, sleep.id)
         ).id
 
-        # keep_series_type_ids=[] means "the meal no longer reports any nutrient type" -
-        # the most aggressive possible delete-stale call - yet it must still leave the
+        # keep=[] means "the meal no longer reports any nutrient type" - the most
+        # aggressive possible delete-stale call - yet it must still leave the
         # sleep-linked row (a different event_record_id) untouched.
-        deleted = series_repo.delete_stale_for_event_record(db, meal.id, keep_series_type_ids=[])
+        deleted = series_repo.delete_stale_for_event_record(db, meal.id, keep=[])
 
         assert deleted == 1
         remaining_ids = {row.id for row in db.query(DataPointSeries.id).all()}
@@ -1057,9 +1057,7 @@ class TestDeleteStaleForEventRecord:
             ),
         ).id
 
-        deleted = series_repo.delete_stale_for_event_record(
-            db, meal.id, keep_series_type_ids=[get_series_type_id(SeriesType.dietary_energy_consumed)]
-        )
+        deleted = series_repo.delete_stale_for_event_record(db, meal.id, keep=[SeriesType.dietary_energy_consumed])
 
         assert deleted == 1
         remaining_ids = {row.id for row in db.query(DataPointSeries.id).all()}
