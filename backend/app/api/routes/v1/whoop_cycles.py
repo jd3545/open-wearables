@@ -39,11 +39,16 @@ def cycles_to_metadata(raw_cycles: list[Any]) -> list[WhoopCycleMetadata]:
         if start is None:
             logger.warning("Skipping WHOOP cycle %s with unparseable start", cycle_id)
             continue
+        end_raw = raw.get("end")
+        end = _parse_dt(end_raw)
+        if end_raw not in (None, "") and end is None:
+            logger.warning("Skipping WHOOP cycle %s with unparseable end", cycle_id)
+            continue
         records.append(
             WhoopCycleMetadata(
                 cycle_id=str(cycle_id),
                 start=start,
-                end=_parse_dt(raw.get("end")),
+                end=end,
                 timezone_offset=raw.get("timezone_offset"),
                 score_state=raw.get("score_state"),
                 updated_at=_parse_dt(raw.get("updated_at")),
@@ -85,6 +90,6 @@ def get_whoop_cycles(
             parse_query_end_datetime(end_time),
         )
     except Exception:
-        logger.exception("WHOOP cycle metadata request failed for user %s", user_id)
+        logger.warning("WHOOP cycle metadata request failed for user %s", user_id)
         raise HTTPException(status_code=502, detail="WHOOP cycle request failed") from None
     return WhoopCycleMetadataResponse(data=cycles_to_metadata(raw or []))

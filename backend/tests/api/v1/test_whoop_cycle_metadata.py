@@ -76,6 +76,12 @@ def test_malformed_cycle_is_dropped_without_dropping_valid_ones() -> None:
     assert [row.cycle_id for row in records] == ["456"]
 
 
+def test_unparseable_end_is_not_treated_as_an_open_cycle() -> None:
+    records = cycles_to_metadata([{"id": "bad-end", "start": START, "end": "garbage timestamp"}, OPEN])
+    assert [row.cycle_id for row in records] == ["123"]
+    assert records[0].end is None
+
+
 def test_join_instant_matches_cycle_start() -> None:
     record = cycles_to_metadata([{"id": "join", "start": START}])[0]
     assert record.energy_recorded_at.isoformat() == "2026-09-17T02:04:24.410000+00:00"
@@ -125,6 +131,7 @@ def test_provider_failure_hides_credentials(
     client: TestClient,
     api_v1_prefix: str,
     api_key_header: dict[str, str],
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     with patch(
         "app.services.providers.whoop.data_247.Whoop247Data.get_cycle_data",
@@ -134,3 +141,5 @@ def test_provider_failure_hides_credentials(
     assert response.status_code == 502
     assert "secret-token" not in response.text
     assert response.json()["detail"] == "WHOOP cycle request failed"
+    assert "secret-token" not in caplog.text
+    assert "Traceback" not in caplog.text
